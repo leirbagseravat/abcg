@@ -66,8 +66,6 @@ void Window::restart() {
 }
 
 void Window::onUpdate() {
-  auto const deltaTime{gsl::narrow_cast<float>(getDeltaTime())};
-
   checkGameOver();
   checkFoodHasEaten();
 
@@ -77,17 +75,14 @@ void Window::onUpdate() {
     restart();
     return;
   }
-    m_snake.update(m_gameData, deltaTime);
-
-
-
+    m_snake.update(m_gameData);
 }
 
 void Window::onPaint() {
   abcg::glClear(GL_COLOR_BUFFER_BIT);
   abcg::glViewport(0, 0, m_viewportSize.x, m_viewportSize.y);
 
-  m_snake.paint(m_gameData, snakeSize);
+  m_snake.paint(m_gameData);
   m_food.paint(m_gameData);
 }
 
@@ -132,14 +127,13 @@ void Window::onDestroy() {
 
 void Window::checkGameOver(){  
   glm::vec2 head = m_snake.m_snakes_positions.back();
-  int snakeSize = m_snake.m_snakes_positions.size();
-
 
   if (head.x > 39 || head.x < 0 || head.y > 39 || head.y < 0 ) {
       m_gameData.m_state = State::GameOver;
       m_snake.destroy();
       m_food.destroy();
   }
+   m_restartWaitTimer.restart();
 }
 
 void Window::checkFoodHasEaten(){

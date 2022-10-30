@@ -8,9 +8,9 @@
 class Snake {
 public:
   void create(GLuint program);
-  void paint(GameData const &gameData, int snakeSize);
+  void paint(GameData const &gameData);
   void destroy();
-  void update(GameData const &gameData, float deltaTime);
+  void update(GameData const &gameData);
   void checkGameOver(GameData &gameData);
   void increaseSize();
 

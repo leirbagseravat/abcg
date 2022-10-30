@@ -132,7 +132,7 @@ Snake::SnakeUnit Snake::makeSnakeUnit(int x, int y) {
 
 }
 
-void Snake::paint(const GameData &gameData, int snakeSize) {
+void Snake::paint(const GameData &gameData) {
   if (gameData.m_state != State::Playing) return;
 
   abcg::glUseProgram(m_program);
@@ -193,7 +193,7 @@ void Snake::increaseSize() {
   
 }
 
-void Snake::update(GameData const &gameData, float deltaTime) {
+void Snake::update(GameData const &gameData) {
 
   if (gameData.m_state == State::Playing && m_stepTimer.elapsed() > 0.1) {
     m_stepTimer.restart();
