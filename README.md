@@ -1,7 +1,9 @@
 Gabriel Tavares Frota de Azevedo 
 RA 11201722230
 
-- LAB 2:  a ideia foi criar um Jogo da cobrinha, temos 3 entidades renderizadas nesse food, snake, window e GameState que contém os Enums (Input, State)
+- LAB 4:  a ideia seria adicionar iluminação no jogo da cobrinha 3d que foi desenvolvido no lab 3. Tive dificuldade em relacionar os elementos de iluminação com o meu código da cobrinha e ele acabou compilando, mas nenhuma imagem foi reproduzida. A ideia seria utilizar o método de sombreamento Gouraud. Deixo aqui um breve resumo sobre o método de sombreamento escolhido e alguns pontos sobre o funcionamento do jogo da cobrinha que foram abordados no lab passado.
+
+- Este método consiste em avaliar a equação modelo para cada vértica da malha. Dessa forma, temos uma cor para cada vértice. O método Gouraud suaviza as descontinuidades de iluminação entre as faces, um problema visto no método Flat. Um problema deste sombreamento é a perda do brilho especular quando nenhum vértice da malha encontra-se dentro da região do brilho.
 
 - a window vai controlar nossa snake e food, criamos a função onEvent() para lidar com os eventos de entrada e saída do teclado, atualizamos o nosso Input com a tecla apertada. Na função Window::OnCreate importamos nossa fonte que vai ser para o texto "Game Over" e criamos uma cobra com tamanho igual a 2 e uma food, para a cobra mudar de tamanho ela tem que comer uma food e assim o seu tamanho é atualizado em 1 pelo fim da cobra. Duas funções importantes da window que controlam o estado do jogo é Window::checkFoodHasEaten() e Window::checkGameOver() a primeira verifica se o par (x,y) da comida é igual ao par (x,y) da cabeça da cobra, caso verdadeiro a comida é destruida e recriada e a cobra atualiza seu tamano em um. Já a segunda função verifica se a cobra saiu do nosso espaço matricial, verificando se o seu par (x,y) execede o limite do quadro.
 
