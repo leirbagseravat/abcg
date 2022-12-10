@@ -21,6 +21,7 @@ protected:
   void paintFood();
   void createFood();
   void loadAppleModel();
+  void computeNormals();
 
    struct SnakeUnit {
     GLuint m_VAO{};
@@ -52,9 +53,13 @@ private:
   GLuint m_apple_VAO{};
   GLuint m_apple_VBO{};
   GLuint m_apple_EBO{};
+  bool m_hasNormals{false};
 
-  
-  GLuint m_program{};
+  // Shaders
+  std::vector<char const *> m_shaderNames{ "gouraud",
+                                          "normal", "depth", "lookat"};
+  std::vector<GLuint> m_programs;
+  int m_currentProgramIndex{};
     float m_angle{};
 
 
@@ -79,6 +84,19 @@ private:
   std::vector<Vertex> m_vertices;
   std::vector<GLuint> m_indices;
   glm::vec2 food_loc = glm::vec2(4, 13);
+
+    glm::mat4 m_modelMatrix{1.0f};
+  glm::mat4 m_viewMatrix{1.0f};
+  glm::mat4 m_projMatrix{1.0f};
+
+  glm::vec4 m_lightDir{-1.0f, -1.0f, -1.0f, 0.0f};
+  glm::vec4 m_Ia{1.0f};
+  glm::vec4 m_Id{1.0f};
+  glm::vec4 m_Is{1.0f};
+  glm::vec4 m_Ka{0.1f, 0.1f, 0.1f, 1.0f};
+  glm::vec4 m_Kd{0.7f, 0.7f, 0.7f, 1.0f};
+  glm::vec4 m_Ks{1.0f};
+  float m_shininess{25.0f};
 
   std::vector<Vertex> m_apple_vertices;
   std::vector<GLuint> m_apple_indices;

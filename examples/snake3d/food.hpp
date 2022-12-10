@@ -13,8 +13,11 @@ public:
   void create(GLuint program);
   void paint(GameData const &gameData, Camera const &camera);
   void destroy();
-    float m_scale{1.0f};
-      glm::vec4 m_color{1};
+  float m_scale{1.0f};
+  glm::vec4 m_color{1};
+  bool m_hasNormals{false};
+
+  void computeNormals();
 
   glm::vec2 m_translation{};
   std::array<glm::vec2, 4> getRandomPositions(int x, int y);   
@@ -33,6 +36,11 @@ private:
   GLuint m_VBO{};
   GLuint m_EBO{};
   Camera m_camera;
+
+  glm::vec4 m_Ka{};
+  glm::vec4 m_Kd{};
+  glm::vec4 m_Ks{};
+  float m_shininess{};
 
     GLuint m_program{};
 

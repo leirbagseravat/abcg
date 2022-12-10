@@ -3,14 +3,48 @@
 #include <unordered_map>
 #include <glm/gtc/random.hpp>
 #include <glm/gtx/fast_trigonometry.hpp>
+#include "imfilebrowser.h"
 
-// Explicit specialization of std::hash for Vertex
 template <> struct std::hash<Vertex> {
   size_t operator()(Vertex const &vertex) const noexcept {
     auto const h1{std::hash<glm::vec3>()(vertex.position)};
-    return h1;
+    auto const h2{std::hash<glm::vec3>()(vertex.normal)};
+    return abcg::hashCombine(h1, h2);
   }
 };
+
+void Window::computeNormals() {
+  // Clear previous vertex normals
+  for (auto &vertex : m_vertices) {
+    vertex.normal = glm::vec3(0.0f);
+  }
+
+  // Compute face normals
+  for (auto const offset : iter::range(0UL, m_indices.size(), 3UL)) {
+    // Get face vertices
+    auto &a{m_vertices.at(m_indices.at(offset + 0))};
+    auto &b{m_vertices.at(m_indices.at(offset + 1))};
+    auto &c{m_vertices.at(m_indices.at(offset + 2))};
+
+    // Compute normal
+    auto const edge1{b.position - a.position};
+    auto const edge2{c.position - b.position};
+    auto const normal{glm::cross(edge1, edge2)};
+
+    // Accumulate on vertices
+    a.normal += normal;
+    b.normal += normal;
+    c.normal += normal;
+  }
+
+  // Normalize
+  for (auto &vertex : m_vertices) {
+    vertex.normal = glm::normalize(vertex.normal);
+  }
+
+  m_hasNormals = true;
+}
+
 
 void Window::onEvent(SDL_Event const &event) {
       if (event.type == SDL_KEYDOWN) {
@@ -59,23 +93,27 @@ void Window::onCreate() {
   abcg::glEnable(GL_DEPTH_TEST);
 
 
-  // Create program
-  m_program =
-      abcg::createOpenGLProgram({{.source = assetsPath + "lookat.vert",
-                                  .stage = abcg::ShaderStage::Vertex},
-                                 {.source = assetsPath + "lookat.frag",
-                                  .stage = abcg::ShaderStage::Fragment}});
+  for (auto const &name : m_shaderNames) {
+    auto const program{
+        abcg::createOpenGLProgram({{.source = assetsPath + name + ".vert",
+                                    .stage = abcg::ShaderStage::Vertex},
+                                   {.source = assetsPath + name + ".frag",
+                                    .stage = abcg::ShaderStage::Fragment}})};
+    m_programs.push_back(program);
+  }
 
-  m_ground.create(m_program);
+  m_ground.create(m_programs.at(0));
 
 
   // Get location of uniform variables
-  m_viewMatrixLocation = abcg::glGetUniformLocation(m_program, "viewMatrix");
-  m_projMatrixLocation = abcg::glGetUniformLocation(m_program, "projMatrix");
-  m_modelMatrixLocation = abcg::glGetUniformLocation(m_program, "modelMatrix");
-  m_colorLocation = abcg::glGetUniformLocation(m_program, "color");
+  m_viewMatrixLocation = abcg::glGetUniformLocation(m_programs.at(0), "viewMatrix");
+  m_projMatrixLocation = abcg::glGetUniformLocation(m_programs.at(0), "projMatrix");
+  m_modelMatrixLocation = abcg::glGetUniformLocation(m_programs.at(0), "modelMatrix");
+  m_colorLocation = abcg::glGetUniformLocation(m_programs.at(0), "color");
 
   loadModelFromFile(assetsPath + "box.obj");  
+
+  abcg::glDeleteVertexArrays(1, &m_VAO);
 
   // SNAKE UNIT
 
@@ -103,10 +141,22 @@ void Window::onCreate() {
 
   abcg::glBindBuffer(GL_ARRAY_BUFFER, m_VBO);
   auto const positionAttribute{
-      abcg::glGetAttribLocation(m_program, "inPosition")};
-  abcg::glEnableVertexAttribArray(positionAttribute);
-  abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE,
-                              sizeof(Vertex), nullptr);
+      abcg::glGetAttribLocation(m_programs.at(0), "inPosition")};
+  if (positionAttribute >= 0) {
+    abcg::glEnableVertexAttribArray(positionAttribute);
+    abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE,
+                                sizeof(Vertex), nullptr);
+  }
+
+  auto const normalAttribute{abcg::glGetAttribLocation(m_programs.at(0), "inNormal")};
+   if (normalAttribute >= 0) {
+    abcg::glEnableVertexAttribArray(normalAttribute);
+    auto const offset{offsetof(Vertex, normal)};
+    abcg::glVertexAttribPointer(normalAttribute, 3, GL_FLOAT, GL_FALSE,
+                                sizeof(Vertex),
+                                reinterpret_cast<void *>(offset));
+  }
+
   abcg::glBindBuffer(GL_ARRAY_BUFFER, 0);
 
   abcg::glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_EBO);
@@ -161,6 +211,16 @@ void Window::loadModelFromFile(std::string_view path) {
       auto const vy{attributes.vertices.at(startIndex + 1)};
       auto const vz{attributes.vertices.at(startIndex + 2)};
 
+      // Vertex normal
+      glm::vec3 normal{};
+      if (index.normal_index >= 0) {
+        m_hasNormals = true;
+        auto const normalStartIndex{3 * index.normal_index};
+        normal = {attributes.normals.at(normalStartIndex + 0),
+                  attributes.normals.at(normalStartIndex + 1),
+                  attributes.normals.at(normalStartIndex + 2)};
+      }
+
       Vertex const vertex{.position = {vx, vy, vz}};
 
       // If map doesn't contain this vertex
@@ -174,8 +234,12 @@ void Window::loadModelFromFile(std::string_view path) {
       m_indices.push_back(hash[vertex]);
     }
   }
-}
 
+  if (!m_hasNormals) {
+    computeNormals();
+  }
+
+}
 
 
 void Window::onPaint() {
@@ -184,7 +248,7 @@ void Window::onPaint() {
 
   abcg::glViewport(0, 0, m_viewportSize.x, m_viewportSize.y);
 
-  abcg::glUseProgram(m_program);
+  abcg::glUseProgram(m_programs.at(0));
 
   // Set uniform variables for viewMatrix and projMatrix
   // These matrices are used for every scene object
@@ -192,17 +256,42 @@ void Window::onPaint() {
                            &m_camera.getViewMatrix()[0][0]);
   abcg::glUniformMatrix4fv(m_projMatrixLocation, 1, GL_FALSE,
                            &m_camera.getProjMatrix()[0][0]);
+    
+    auto const normalMatrixLoc{
+      abcg::glGetUniformLocation(m_programs.at(0), "normalMatrix")};
+  auto const lightDirLoc{
+      abcg::glGetUniformLocation(m_programs.at(0), "lightDirWorldSpace")};
+  auto const shininessLoc{abcg::glGetUniformLocation(m_programs.at(0), "shininess")};
+  auto const IaLoc{abcg::glGetUniformLocation(m_programs.at(0), "Ia")};
+  auto const IdLoc{abcg::glGetUniformLocation(m_programs.at(0), "Id")};
+  auto const IsLoc{abcg::glGetUniformLocation(m_programs.at(0), "Is")};
+  auto const KaLoc{abcg::glGetUniformLocation(m_programs.at(0), "Ka")};
+  auto const KdLoc{abcg::glGetUniformLocation(m_programs.at(0), "Kd")};
+  auto const KsLoc{abcg::glGetUniformLocation(m_programs.at(0), "Ks")};
+
+  auto const lightDirRotated{glm::vec4(1.0f, 0.0f, 0.0f, 1.0f) * m_lightDir};
+  
+  abcg::glUniform4fv(lightDirLoc, 1, &lightDirRotated.x);
+  abcg::glUniform4fv(IaLoc, 1, &m_Ia.x);
+  abcg::glUniform4fv(IdLoc, 1, &m_Id.x);
+  abcg::glUniform4fv(IsLoc, 1, &m_Is.x);
+  abcg::glUniform1f(shininessLoc, m_shininess);
+
 
   abcg::glBindVertexArray(m_VAO);
-  
+
   // x, z, y
 
   for ( auto const pos : m_snakes_positions) {
     
     glm::mat4 model{0.1f};
-     model = glm::translate(model, glm::vec3(-8.0f+(pos.x), 0.5f, -8.0f+(pos.y)));
+    model = glm::translate(model, glm::vec3(-8.0f+(pos.x), 0.5f, -8.0f+(pos.y)));
 
     abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
+
+    auto const modelViewMatrix{glm::mat3(m_viewMatrix * m_modelMatrix)};
+    auto const normalMatrix{glm::inverseTranspose(modelViewMatrix)};
+    abcg::glUniformMatrix3fv(normalMatrixLoc, 1, GL_FALSE, &normalMatrix[0][0]);
      //cor azul
     abcg::glUniform4f(m_colorLocation, 0.0f, 0.8f, 1.0f, 1.0f);
 
@@ -263,7 +352,7 @@ void Window::onResize(glm::ivec2 const &size) {
 void Window::onDestroy() {
   m_ground.destroy();
 
-  abcg::glDeleteProgram(m_program);
+  abcg::glDeleteProgram(m_programs.at(0));
   abcg::glDeleteBuffers(1, &m_EBO);
   abcg::glDeleteBuffers(1, &m_VBO);
   abcg::glDeleteVertexArrays(1, &m_VAO);
@@ -303,7 +392,7 @@ void Window::createFood() {
 
   abcg::glBindBuffer(GL_ARRAY_BUFFER, m_apple_VBO);
   auto const positionAttribute{
-      abcg::glGetAttribLocation(m_program, "inPosition")};
+      abcg::glGetAttribLocation(m_programs.at(0), "inPosition")};
   abcg::glEnableVertexAttribArray(positionAttribute);
   abcg::glVertexAttribPointer(positionAttribute, 3, GL_FLOAT, GL_FALSE,
                               sizeof(Vertex), nullptr);
@@ -373,7 +462,7 @@ void Window::paintFood(){
 
   abcg::glViewport(0, 0, m_viewportSize.x, m_viewportSize.y);
 
-  abcg::glUseProgram(m_program);
+  abcg::glUseProgram(m_programs.at(0));
 
   // Set uniform variables for viewMatrix and projMatrix
   // These matrices are used for every scene object

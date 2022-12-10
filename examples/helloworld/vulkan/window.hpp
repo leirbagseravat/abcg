@@ -10,6 +10,7 @@ protected:
   void onPaintUI() override;
   void onResize() override;
   void onDestroy() override;
+  void createBuffers();
 
 private:
   struct Vertex {
@@ -31,7 +32,6 @@ private:
   bool m_showAnotherWindow{false};
   glm::vec4 m_clearColor{0.906f, 0.910f, 0.918f, 1.00f};
 
-  void createBuffers();
   void destroyBuffers();
   void createShaders();
   void destroyShaders();
