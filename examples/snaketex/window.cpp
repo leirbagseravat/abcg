@@ -108,7 +108,6 @@ void Window::onPaint() {
   // Get location of uniform variables
   auto const viewMatrixLoc{abcg::glGetUniformLocation(m_program, "viewMatrix")};
   auto const projMatrixLoc{abcg::glGetUniformLocation(m_program, "projMatrix")};
-  auto const modelMatrixLoc{abcg::glGetUniformLocation(m_program, "modelMatrix")};
   // auto const normalMatrixLoc{
   //     abcg::glGetUniformLocation(program, "normalMatrix")};
   auto const lightDirLoc{
@@ -212,9 +211,6 @@ void Window::onPaint() {
 
 // /////
 
-
-
-
   if (m_currentProgramIndex == 0 || m_currentProgramIndex == 1) {
     renderSkybox();
   }
@@ -297,53 +293,11 @@ void Window::onPaintUI() {
         fileDialogNormalMap.Open();
     }
 
-    // Slider will be stretched horizontally
-    ImGui::PushItemWidth(widgetSize.x - 16);
-    ImGui::SliderInt(" ", &m_trianglesToDraw, 0, m_model.getNumTriangles(),
-                     "%d triangles");
-    ImGui::PopItemWidth();
-
-    static bool faceCulling{};
-    ImGui::Checkbox("Back-face culling", &faceCulling);
-
-    if (faceCulling) {
-      abcg::glEnable(GL_CULL_FACE);
-    } else {
-      abcg::glDisable(GL_CULL_FACE);
-    }
-
     // Projection combo box
     {
       auto const aspect{gsl::narrow<float>(m_viewportSize.x) /
                         gsl::narrow<float>(m_viewportSize.y)};
       m_projMatrix = glm::perspective(glm::radians(120.0f), aspect, 0.5f, 1000.0f);
-    }
-
-    if (!m_model.isUVMapped()) {
-      ImGui::TextColored(ImVec4(1, 1, 0, 1), "Mesh has no UV coords.");
-    }
-
-    // UV mapping box
-    {
-      std::vector<std::string> comboItems{"Triplanar", "Cylindrical",
-                                          "Spherical"};
-
-      if (m_model.isUVMapped())
-        comboItems.emplace_back("From mesh");
-
-      ImGui::PushItemWidth(120);
-      if (ImGui::BeginCombo("UV mapping",
-                            comboItems.at(m_mappingMode).c_str())) {
-        for (auto const index : iter::range(comboItems.size())) {
-          auto const isSelected{m_mappingMode == static_cast<int>(index)};
-          if (ImGui::Selectable(comboItems.at(index).c_str(), isSelected))
-            m_mappingMode = index;
-          if (isSelected)
-            ImGui::SetItemDefaultFocus();
-        }
-        ImGui::EndCombo();
-      }
-      ImGui::PopItemWidth();
     }
 
     ImGui::End();

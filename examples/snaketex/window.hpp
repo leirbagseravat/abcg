@@ -24,8 +24,6 @@ private:
   int m_trianglesToDraw{};
   int m_FOODtrianglesToDraw{};
 
-  float m_zoom{};
-
   glm::mat4 m_modelMatrix{1.0f};
   glm::mat4 m_viewMatrix{1.0f};
   glm::mat4 m_projMatrix{1.0f};
@@ -37,7 +35,7 @@ private:
 
   // Mapping mode
   // 0: triplanar; 1: cylindrical; 2: spherical; 3: from mesh
-  int m_mappingMode{};
+  int m_mappingMode{2};
 
   // Light and material properties
   glm::vec4 m_lightDir{-1.0f, -1.0f, -1.0f, 0.0f};
@@ -86,7 +84,7 @@ private:
   void renderSkybox();
   void destroySkybox() const;
   void loadModel(std::string_view path);
-    void loadFoodModel();
+  void loadFoodModel();
 
 };
 
