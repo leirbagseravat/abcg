@@ -9,7 +9,7 @@ int main(int argc, char **argv) {
     window.setWindowSettings({
         .width = 600,
         .height = 600,
-        .title = "Model Viewer (version 6)",
+        .title = "Snake Texture",
     });
 
     app.run(window);
