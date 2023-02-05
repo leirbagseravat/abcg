@@ -2,6 +2,7 @@
 #add_subdirectory(sierpinski)
 #add_subdirectory(coloredtriangles)
 #add_subdirectory(snake)
-add_subdirectory(snake3d)
+#add_subdirectory(snake4d)
+add_subdirectory(snaketex)
 #add_subdirectory(loadmodel)
 #add_subdirectory(snake3d)

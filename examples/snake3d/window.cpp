@@ -280,8 +280,6 @@ void Window::onPaint() {
 
   abcg::glBindVertexArray(m_VAO);
 
-  // x, z, y
-
   for ( auto const pos : m_snakes_positions) {
     
     glm::mat4 model{0.1f};
@@ -299,12 +297,10 @@ void Window::onPaint() {
 
   }
 
-
     glm::mat4 model{0.1f};
     model = glm::translate(model, glm::vec3(-8.0f+(food_loc.x), 0.5f, -8.0f+(food_loc.y)));
     model = glm::rotate(model, glm::radians(45.0f), glm::vec3(1, 0, 1));
     model = glm::scale(model, glm::vec3(0.75f));
-    // model = glm::rotate(model,m_angle, glm::sphericalRand(1.0f));
     
     abcg::glUniformMatrix4fv(m_modelMatrixLocation, 1, GL_FALSE, &model[0][0]);
      //cor azul
